@@ -4,9 +4,12 @@ package net.kafka.controller;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.validation.Valid;
 
 /**
  * Created by ykurtulus on 4/15/16.
@@ -20,8 +23,8 @@ public class KafkaProducerController {
     @Autowired
      KafkaProducer<String,String> producer;
 
-    @GetMapping(value = "/{key}/{value}")
-    public void produce(String key, String value){
+    @RequestMapping(value = "/{key}/{value}",method = RequestMethod.GET)
+    public void produce(@Valid @PathVariable("key")String key, @Valid @PathVariable("key") String value){
 
         ProducerRecord record = new ProducerRecord(TOPIC_NAME,key, value);
         producer.send(record);

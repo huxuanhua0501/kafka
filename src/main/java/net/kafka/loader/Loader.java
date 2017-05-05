@@ -6,10 +6,10 @@ import net.kafka.consumer.KafkaConsumer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PreDestroy;
+import javax.annotation.PostConstruct;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -19,19 +19,25 @@ import java.util.concurrent.Executors;
 @Component
 public class Loader {
     @Autowired
-    ConsumerConnector consumerConnector;
+    private ConsumerConnector consumer;
+    private Map<String, Integer> topicCountMap;
+    private int THREAD_COUNT_PER_TOPIC = 1;
     private ExecutorService executorService;
 
-    @PreDestroy
-    public void init() {
-        ConcurrentHashMap<String, Integer> topicMap = new ConcurrentHashMap<>();
-        topicMap.put("test", 1);
-        Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumerConnector.createMessageStreams(topicMap);
-        executorService = Executors.newFixedThreadPool(topicMap.size());
+    @PostConstruct
+    public void init() throws Exception{
+
+        Map<String, Integer> topicCountMap = new HashMap<>();
+        topicCountMap.put("test", 1);
+
+        Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumer.createMessageStreams(topicCountMap);
+
+        executorService = Executors.newFixedThreadPool(THREAD_COUNT_PER_TOPIC * topicCountMap.size());
+
         int threadNumber = 1;
         for (String topicName : consumerMap.keySet()) {
             for (KafkaStream<byte[], byte[]> stream : consumerMap.get(topicName)) {
-                executorService.submit(new KafkaConsumer(stream, topicName, threadNumber));
+                executorService.submit(new KafkaConsumer(stream,topicName,threadNumber));
                 threadNumber++;
             }
         }
